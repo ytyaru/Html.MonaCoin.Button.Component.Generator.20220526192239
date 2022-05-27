@@ -1,5 +1,7 @@
 window.addEventListener('DOMContentLoaded', async(event) => {
     console.debug('DOMContentLoaded!!');
+    const mention = new WebMention(30) 
+    await mention.make() 
     try {
         window.mpurse.updateEmitter.removeAllListeners()
           .on('stateChanged', isUnlocked => console.log(isUnlocked))
@@ -25,8 +27,6 @@ window.addEventListener('DOMContentLoaded', async(event) => {
     document.getElementById('ng-msg').addEventListener('input', async(event) => { await gen.generate() })
     document.getElementById('copy-to-clipboard').addEventListener('click', async(event) => { await gen.copy() })
     document.getElementById('download-zip').addEventListener('click', async(event) => { await zip.download() })
-    const mention = new WebMention(30) 
-    await mention.make() 
 });
 window.addEventListener('load', async(event) => {
     console.debug('load!!');

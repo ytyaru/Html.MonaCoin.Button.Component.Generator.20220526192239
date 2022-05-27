@@ -14,6 +14,11 @@ class ZipDownloader {
         download.download = 'mpurse-send-button-webcomponent.zip';
         download.click();
         (window.URL || window.webkitURL).revokeObjectURL(url);
+        this.#toast(`ZIPファイルをダウンロードしました！`)
+    }
+    #toast(message) {
+        if (Toastify) { Toastify({text: message, position:'right'}).showToast(); }
+        else { alert(message) }
     }
     #makeScript() { return `<script src="./mpurse-send-button.js"></script>` }
     #makeMpurseSendButtons() {
