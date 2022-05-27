@@ -17,7 +17,7 @@ class ZipDownloader {
         this.#toast(`ZIPファイルをダウンロードしました！`)
     }
     #toast(message) {
-        if (Toastify) { Toastify({text: message, position:'right'}).showToast(); }
+        if (Toastify) { Toastify({text: message, position:'center'}).showToast(); }
         else { alert(message) }
     }
     #makeScript() { return `<script src="./mpurse-send-button.js"></script>` }
