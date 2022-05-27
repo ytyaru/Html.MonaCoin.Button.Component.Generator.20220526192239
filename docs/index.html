@@ -1,0 +1,134 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>投げモナボタンジェネレータ（WebComponent版）</title>
+<meta name="description" content="あなた宛の投げモナボタンを作ります。">
+<meta name="author" content="ytyaru">
+<link rel="license" href="https://creativecommons.org/licenses/by-sa/4.0/deed.ja">
+<link rel="icon" href="assets/image/avator.png">
+<link rel="stylesheet" href="css/styles.css">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta property="og:type" content="article" />
+<meta property="og:site_name" content="ytyaru" />
+<meta property="og:title" content="投げモナボタンジェネレータ" />
+<meta property="og:description" content="あなた宛の投げモナボタンを作ります。" />
+<meta property="og:image" content="https://ytyaru.github.io/Html.MonaCoin.Button.Component.Generator.20220526192239/asset/image/eye-catch.png" />
+<meta property="article:published_time" content="2022-05-25T12:00:00+09:00" />
+<meta property="article:author" content="https://ytyaru.github.io/" />
+<meta name="twitter:card" content="summary_large_image" />
+<script type="application/ld+json">
+  {
+    "@context": "https://schema.org/",
+    "@type": "Article",
+    "author": {
+      "@type": "Person",
+      "name": "ytyaru",
+      "url": "https://ytyaru.github.io/",
+      "sameAs": [
+        "https://twitter.com/ytyaru1",
+        "https://github.com/ytyaru",
+        "https://profile.hatena.ne.jp/ytyaru/",
+        "https://mstdn.jp/@ytyaru",
+        "https://pawoo.net/@ytyaru_pawoo",
+        "https://www.pixiv.net/users/53831310",
+        "https://monaledge.com/user/MEHCqJbgiNERCH3bRAtNSSD9uxPViEX1nu",
+        "https://web3.askmona.org/user/1590",
+      ]
+    },
+    "dateModified": "2022-05-25T12:00:00+09:00",
+    "datePublished": "2022-05-25T12:00:00+09:00",
+    "headline": "投げモナボタンジェネレータ（WebComponent版）",
+    "image": ["https://ytyaru.github.io/Html.MonaCoin.Button.Component.Generator.20220526192239/asset/image/eye-catch.png"]
+  }
+</script>
+
+<link rel="webmention" href="https://webmention.io/ytyaru.github.io/webmention" />
+<link rel="pingback" href="https://webmention.io/ytyaru.github.io/xmlrpc" />
+
+<script src="https://cdn.jsdelivr.net/npm/source-map@0.7.3/dist/source-map.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/terser/dist/bundle.min.js"></script>
+<link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
+<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+<script src="https://unpkg.com/@popperjs/core@2"></script>
+<script src="https://unpkg.com/tippy.js@6"></script>
+<script src="./lib/jszip/3.9.1/min.js"></script>
+<script src="./js/web-mention.js"></script>
+<script src="./js/mpurse-send-button.js"></script>
+<script src="./js/mpurse-send-button-generator.js"></script>
+<script src="./js/zip-downloader.js"></script>
+<script src="js/main.js"></script>
+</head>
+<body>
+
+<h1>投げモナボタンジェネレータ（WebComponent版）</h1>
+<p>あなた宛の投げモナボタンを作ります。</p>
+<details><summary>使い方</summary>
+<ol>
+<li><a href="https://ytyaru.github.io/Html.Mpurse.Api.20220517160403/setup.html">mpurseで口座を作る</a></li>
+<li><a href="https://ytyaru.github.io/Html.Mpurse.Api.20220517160403/setup.html#login">ブラウザの拡張機能でmpurseをクリックしてパスワードを入れて承認します</a></li>
+<li>あなたのアドレスが出力される</li>
+<li><kbd>コピー</kbd>ボタンを押す</li>
+<li>あなたのWEBサイトに貼り付ける</li>
+<li>あなたのWEBサイトに、あなた宛の投げモナボタンが表示される</li>
+</ol>
+<p>もしアドレスが出なければmpurseを承認後、リロードやアドレスを<kbd>取得する</kbd>ボタンを押してみてね。手で入力してもOK。</p>
+</details>
+<form>
+<fieldset><legend>設定</legend>
+<table>
+<tr><th>アドレス</th><td><button id="get-address" type="button">取得する</button><input id="to" type="text"></td></tr>
+<tr><th>金額</th><td>
+<input id="amount" type="number" value="0.11411400" min="0.00000001" step="0.00000001">
+<select id="asset">
+    <option value="MONA">MONA</option>
+    <option value="XMP">XMP</option>
+</select>
+</td></tr>
+<tr><th>メモ</th><td><input id="memo" value="Good job!"></td></tr>
+<tr><th>画像</th><td>
+<select id="img">
+    <option value="coin-mark">coin-mark</option>
+    <option value="coin-monar">coin-monar</option>
+    <option value="monar-mark">monar-mark</option>
+</select>
+<input id="img-src" value="" type="text" placeholder="自サイトに配置した画像URL"></input>
+<br>
+<select id="img-size">
+    <option value="16">16</option>
+    <option value="32">32</option>
+    <option value="64" selected>64</option>
+    <option value="128">128</option>
+    <option value="256">256</option>
+</select>
+<input id="title" value="投げモナする" type="text" placeholder="title属性値"></input>
+</td></tr>
+<tr><th>成功メッセージ</th><td>
+<input id="ok-msg" value="投げモナしました！\nありがとうございます！（ ´∀｀）" placeholder="成功時に実行するコード">
+</td></tr>
+<tr><th>失敗メッセージ</th><td>
+<input id="ng-msg" value="キャンセルしました(´・ω・｀)"  placeholder="成功時に実行するコード">
+</td></tr>
+</table>
+</fieldset>
+</form>
+
+<table>
+<tr><th>結果</th><th>コード</th><th>コピー</th><th>ZIP</th></tr>
+<td id="export"></td><td><textarea id="export-code" width="40" height="10"></textarea></td><td><button id="copy-to-clipboard" type="button">コピー</button></td><td id="export-download-zip"><button id="download-zip" type="button">ダウンロード</button></td></tr>
+</table>
+
+<details><summary>使い分け</summary>
+<p>　<a href="https://ytyaru.github.io/Html.MonaCoin.Button.Generator.20220519194201/">前版</a>は複数のボタンを配置するとその数だけBase64データが必要でした。１ページ１ボタンだけなら、そこまで問題はないでしょう。それでもページ数が増えたら容量も増えていきます。どうせならサイト内で共有してサイズを節約したいですよね？</p>
+<p>　今回版はいくつボタンを作ってもBase64データは増えません。１ページで複数のボタンを作るときに便利です。たとえば他の人のボタンも作ったり、自分の成果物を網羅して、それぞれに投げモナボタンを設置するなどの用途に向いています。</p>
+<p>　でも今回版は<code>&lt;script	&gt;</code>タグがウザイですよね？　これを外部ファイル化して各ページでリンクするのがよいでしょう。詳しくはZIPをダウンロードしてコードをみてね。</p>
+<p>　画像URLを参照したほうが軽いです。自分でアップロードした画像URLを参照する方法をおすすめします。その後、mpurse-send-button.jsにあるBase64データ部分とそれに関するコードを削除すれば、いい感じに軽くなるでしょう。</p>
+</details>
+
+<footer><a href="https://twitter.com/share?ref_src=twsrc%5Etfw" class="twitter-share-button" data-show-count="false">Tweet</a><script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script><a href="https://ytyaru.github.io/" title="著者"><img src="./asset/image/avator.png" width="64" height="64">ytyaru</a><mpurse-send-button to="MEHCqJbgiNERCH3bRAtNSSD9uxPViEX1nu" img="coin-monar"/><a href="https://ytyaru.github.io/Html.Mpurse.Api.20220517160403/setup.html" title="モナコインを使うには">？</a></footer>
+
+<span id="web-mention-count"></span>
+<div id="web-mention-comment"></div>
+
+</body>
+</html>
