@@ -23,6 +23,7 @@ class DateDiff { // 〜時間前のような表記を生成する
 class BugIsoEscape { // webmentionのJSON応答値にあるpublishedの日時テキストが不正値である。正しくISO8601形式になっていない。サービスやサーバごと、あるいはアカウントのタイムゾーンごとに異なる値を返すのかもしれない。それに暫定対処するためのコードである。
     constructor(dateDiff=null) {
         this.dateDiff = dateDiff || new DateDiff()
+        this.timezone = new RegExp(/[+\-][0-9]{2}:[0-0]{2}$/);
     }
     escape(child) { // サーバごとに異なる書式を正しいISO8601形式に修正する。child:webmention一件あたりのデータ
         const iso = this.#routingServer(child)
@@ -39,7 +40,10 @@ class BugIsoEscape { // webmentionのJSON応答値にあるpublishedの日時テ
         return child.published
     }
     #mstdnjp(published) { // "2022-05-24T02:49:03"のような値が返ってきた。これはUTC標準時だが末尾にZがついていない
-        if (!published.endsWith('Z')) { return published + 'Z' }
+        console.log(this.timezone)
+        if (published.match(this.timezone)) { return published } // 将来マストドンが正しく修正したとき用
+        if (published.endsWith('Z')) { return published }        // 将来マストドンが正しく修正したとき用
+        if (!published.endsWith('Z')) { return published + 'Z' } // 今回はこれだけで大丈夫
         return published
     }
     #pawoo(published) { // "2022-05-29T00:14:22"のような値が返ってきた。これはUTC標準時だが末尾にZがついていない
