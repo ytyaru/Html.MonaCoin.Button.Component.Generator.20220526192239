@@ -1,13 +1,15 @@
 class DateDiff { // 〜時間前のような表記を生成する
-    constructor() { this.base = Date.now(); this.elapsed = null; this.iso = null; this.target = null;}
+    constructor() { this.base = new Date(); this.elapsed = null; this.iso = null; this.target = null;}
     get Base() { return this.base }
     set Base(d) { if (d instanceof Date) { this.base = d } }
     get Elapsed() { return this.elapsed }
     get Iso() { return this.iso }
-    diff (target) { // target: epochTime(Date.parse(`ISO8601`)の返り値)
-        this.target = new Date(target)
-        this.target.setHours(this.target.getHours() + 9)
-        const diff = this.base.getTime() - this.target.getTime() // UTCから日本時間に合わせる
+    diff (target) { // target: DateまたはepochTime(Date.parse(`ISO8601`)の返り値)
+        if (target instanceof Date) { this.target = target }
+        else if (Number.isInteger(target)) { this.target = new Date(target) }
+        else { throw new Error('引数targetはData型かInteger型であるべきです。') }
+        //this.target.setHours(this.target.getHours() + 9) 正しいISO8601形式なら９時間足す必要ない
+        const diff = this.base.getTime() - this.target.getTime() // 現在時刻からの差分
         this.elapsed = new Date(diff);
         this.iso = `${this.target.getFullYear()}-${(this.target.getMonth()+1).toString().padStart(2, '0')}-${this.target.getDate().toString().padStart(2, '0')} ${this.target.getHours().toString().padStart(2, '0')}:${this.target.getMinutes().toString().padStart(2, '0')}:${this.target.getSeconds().toString().padStart(2, '0')}`
         if (this.elapsed.getUTCFullYear() - 1970) { return this.elapsed.getUTCFullYear() - 1970 + '年前' }
@@ -18,6 +20,42 @@ class DateDiff { // 〜時間前のような表記を生成する
         else { return this.elapsed.getUTCSeconds() + '秒前' }
     }
 }
+class BugIsoEscape { // webmentionのJSON応答値にあるpublishedの日時テキストが不正値である。正しくISO8601形式になっていない。サービスやサーバごと、あるいはアカウントのタイムゾーンごとに異なる値を返すのかもしれない。それに暫定対処するためのコードである。
+    constructor(dateDiff=null) {
+        this.dateDiff = dateDiff || new DateDiff()
+    }
+    escape(child) { // サーバごとに異なる書式を正しいISO8601形式に修正する。child:webmention一件あたりのデータ
+        const iso = this.#routingServer(child)
+        const date = new Date(Date.parse(iso)) // 日時型に変換する
+        child.publishedDate = date             // テキスト書式が異なっていてもソートできるよう日付型にしておく
+        child.publishedElapsed = this.dateDiff.diff(date) // 現在時刻からの差分をテキスト表現したもの
+        child.publishedYmdhms = this.dateDiff.Iso // 現在時刻からの差分をテキスト表現したもの
+    }
+    #routingServer(child) { // サーバごとに異なる書式を正しいISO8601形式に修正する
+        if (!child.published) { return child['wm-received'] } // なんとpublishedがnullになるmentionもあった。やむなくwm-recievedで代用する。たぶんこれはwembentionがこいつを発見した時刻だと思われる。末尾ZのUTC標準時形式だった。
+             if (child.url.startsWith('https://twitter.com/')) { return this.#twitter(child.published) }
+        else if (child.url.startsWith('https://mstdn.jp/')) { return this.#mstdnjp(child.published) }
+        else if (child.url.startsWith('https://pawoo.net/')) { return this.#pawoo(child.published) }
+        return child.published
+    }
+    #mstdnjp(published) { // "2022-05-24T02:49:03"のような値が返ってきた。これはUTC標準時だが末尾にZがついていない
+        if (!published.endsWith('Z')) { return published + 'Z' }
+        return published
+    }
+    #pawoo(published) { // "2022-05-29T00:14:22"のような値が返ってきた。これはUTC標準時だが末尾にZがついていない
+        return this.#mstdnjp(published)
+    }
+    #twitter(published) { // "2022-05-27T22:09:18+00:00"のような値が返ってきた。日本ローカル時刻と思われるがタイムゾーン値が+09:00でない。ツイッターはアカウント設定によりアカウントごとにタイムゾーンを設定できたような気がする。その値によってタイムゾーンが変わる？とりま日本からのツイートと仮定して+00:00を+09:00に変換する。でも、タイムゾーンが+00:00地域からのツイートだったら、それも+09:00されてしまう！でも、他に対処のしようがない。とりま日本のみと仮定して暫定処置とする。
+        if (published.endsWith('+00:00')) { return published.replace('+00:00', '+09:00') }
+        return published
+    }
+    github(published) { // 未調査
+
+    }
+    html(publish) { // 未調査
+
+    }
+}
 class WebMention {
     constructor(per=30) {
         this.dateDiff = new DateDiff()
@@ -25,6 +63,7 @@ class WebMention {
         this.count = null
         this.mentions = null
         this.per = per
+        this.bugIso = new BugIsoEscape()
     }
     async make() {
         this.dateDiff.Base = new Date()
@@ -63,11 +102,20 @@ class WebMention {
     async #mentions() {
         const res = await fetch(`https://webmention.io/api/mentions.jf2?target=${this.target}&sort-by=published&sort-dir=down&per-page=${this.per}&page=0`)
         const mentions = await res.json()
-        this.mentions = mentions
-        console.debug(mentions)
+        this.#bugIso(mentions)
+        console.debug(this.mentions)
         await this.#comment()
         await this.#like()
         await this.#bookmark()
+    }
+    #bugIso(mentions) { // // サーバ側が返す不正ISO8601を強制修正し、それに沿ってソートし直す
+        this.mentions = mentions
+        for (let i=0; i<this.mentions.children.length; i++) { // サーバ側が返す不正ISO8601を強制修正する
+            this.bugIso.escape(this.mentions.children[i])
+        }
+        // 日付順に降順ソート（サーバ側のISO8601が不正値なのに、それを基準にしてwebmentionAPIでsort-by,sort-dirしている。それはまちがっているため、正しいISO8601形式に強制修正したのち、再度ソートをかけることで正しい日時と順序になる）
+        const children = this.mentions.children.sort(function(a, b) { return (a.date > b.date) ? -1 : 1; });
+        this.mentions.children = children
     }
     async #comment() {
         //mentions.children = this.#getTestChildren()
@@ -91,8 +139,9 @@ class WebMention {
     }
     #commentTypeA(child) { // 人、日時、コメント（サーバが返すpublished日時テキストが不統一で正しくISO8601でないからバグる！）
         const content = child.content.html || child.content.text
-        const diff = this.dateDiff.diff(Date.parse(child.published))
-        return `<div class="mention"><div class="mention-meta">${this.#author(child.author)}　<span title="${this.dateDiff.Iso}">${diff}</span></div><div>${content}</div></div>`
+        return `<div class="mention"><div class="mention-meta">${this.#author(child.author)}　<span title="${child.publishedYmdhms}">${child.publishedElapsed}</span></div><div>${content}</div></div>`
+        //const diff = this.dateDiff.diff(Date.parse(child.published))
+        //return `<div class="mention"><div class="mention-meta">${this.#author(child.author)}　<span title="${this.dateDiff.Iso}">${diff}</span></div><div>${content}</div></div>`
     }
     #getTestChildren() {
         return [
