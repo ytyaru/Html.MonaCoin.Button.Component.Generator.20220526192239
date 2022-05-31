@@ -2,7 +2,7 @@ class MpurseSendButtonGenerator {
     async copy() {
         try {
             this.#toast('クリップボードにコピーしました！')
-            await navigator.clipboard.writeText(document.getElementById('export').innerHTML) 
+            await navigator.clipboard.writeText(document.getElementById('export-code').value) 
         }
         catch(e) { console.debug('クリップボードのコピーに失敗しました……。', e) }
     }
