@@ -73,9 +73,13 @@ class MpurseSendButton extends HTMLElement { // 投げモナボタン（Mpurse A
         const memo = this.memo
         this.addEventListener('click', async(event) => {
             console.debug(`クリックしました。\n宛先：${to}\n金額：${amount} ${asset}\nメモ：${memo}`)
-            const txHash = await window.mpurse.sendAsset(to, asset, amount, memoType, memo)
-            console.debug(`送金しました。\ntxHash: ${txHash}\n宛先：${to}\n金額：${amount} ${asset}\nメモ：${memo}`)
-            alert(`投げモナしました！\n宛先：${to}\n金額：${amount} ${asset}\nメモ：${memo}`)
+            const txHash = await window.mpurse.sendAsset(to, asset, amount, memoType, memo).catch((e) => this.ngMsg);
+            if (txHash === this.ngMsg) { console.debug(this.ngMsg); alert(this.ngMsg); }
+            else {
+                console.debug(txHash)
+                console.debug(`送金しました。\ntxHash: ${txHash}\n宛先：${to}\n金額：${amount} ${asset}\nメモ：${memo}`)
+                alert(this.okMsg)
+            }
         });
     }
     #makeSendButtonA() {
